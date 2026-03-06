@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>2D Arena Battle</title>
+
+<style>
+
+body{
+margin:0;
+background:#0f1720;
+font-family:sans-serif;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+canvas{
+background:#1e293b;
+border:4px solid white;
+cursor:crosshair;
+}
+
+#menu{
+position:absolute;
+text-align:center;
+}
+
+button{
+padding:10px 20px;
+margin:10px;
+font-size:16px;
+cursor:pointer;
+}
+
+#ui{
+position:absolute;
+top:10px;
+left:10px;
+font-size:18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+<h2>キャラクターを選択</h2>
+<button onclick="startGame('fast')">スピード</button>
+<button onclick="startGame('tank')">タンク</button>
+<button onclick="startGame('sniper')">スナイパー</button>
+</div>
+
+<div id="ui" style="display:none">
+Score: <span id="score">0</span>
+</div>
+
+<canvas id="game" width="1000" height="600"></canvas>
+
+<script>
+
+const canvas=document.getElementById("game")
+const ctx=canvas.getContext("2d")
+const scoreEl=document.getElementById("score")
+const ui=document.getElementById("ui")
+
+let mouse={x:0,y:0}
+let keys={}
+
+document.addEventListener("keydown",e=>keys[e.code]=true)
+document.addEventListener("keyup",e=>keys[e.code]=false)
+
+canvas.addEventListener("mousemove",e=>{
+let rect=canvas.getBoundingClientRect()
+mouse.x=e.clientX-rect.left
+mouse.y=e.clientY-rect.top
+})
+
+class Character{
+
+constructor(x,y,team,type){
+
+this.x=x
+this.y=y
+this.team=team
+this.type=type
+this.size=24
+
+if(type=="fast"){
+this.speed=3.8
+this.hp=90
+this.damage=10
+}
+
+if(type=="tank"){
+this.speed=2
+this.hp=160
+this.damage=12
+}
+
+if(type=="sniper"){
+this.speed=2.5
+this.hp=80
+this.damage=22
+}
+
+this.maxHp=this.hp
+this.reload=0
+this.hyper=false
+this.respawn=0
+
+}
+
+draw(){
+
+if(this.respawn>0)return
+
+ctx.fillStyle=this.team=="blue"?"deepskyblue":"crimson"
+
+if(this.hyper) ctx.fillStyle="orange"
+
+ctx.fillRect(this.x,this.y,this.size,this.size)
+
+ctx.fillStyle="red"
+ctx.fillRect(this.x,this.y-7,this.size,4)
+
+ctx.fillStyle="lime"
+ctx.fillRect(this.x,this.y-7,this.size*(this.hp/this.maxHp),4)
+
+}
+
+move(){
+
+if(this.team!="blue")return
+
+let nx=this.x
+let ny=this.y
+
+if(keys["KeyW"])ny-=this.speed
+if(keys["KeyS"])ny+=this.speed
+if(keys["KeyA"])nx-=this.speed
+if(keys["KeyD"])nx+=this.speed
+
+if(!hitWall(nx,ny,this.size)){
+this.x=nx
+this.y=ny
+}
+
+}
+
+ai(){
+
+if(this.team!="red")return
+if(this.respawn>0)return
+
+let target=player
+
+let dx=target.x-this.x
+let dy=target.y-this.y
+let d=Math.sqrt(dx*dx+dy*dy)
+
+let nx=this.x+dx/d*this.speed
+let ny=this.y+dy/d*this.speed
+
+if(!hitWall(nx,ny,this.size)){
+this.x=nx
+this.y=ny
+}
+
+if(this.reload<=0){
+
+shoot(this,dx,dy)
+this.reload=60
+
+}
+
+}
+
+}
+
+function shoot(char,dx,dy){
+
+let d=Math.sqrt(dx*dx+dy*dy)
+
+bullets.push({
+
+x:char.x+char.size/2,
+y:char.y+char.size/2,
+vx:dx/d*8,
+vy:dy/d*8,
+team:char.team,
+damage:char.hyper?char.damage*2:char.damage
+
+})
+
+}
+
+function gadget(){
+
+for(let i=0;i<12;i++){
+
+let a=i*Math.PI*2/12
+
+bullets.push({
+
+x:player.x+12,
+y:player.y+12,
+vx:Math.cos(a)*5,
+vy:Math.sin(a)*5,
+team:"blue",
+damage:15
+
+})
+
+}
+
+}
+
+function hyper(){
+
+player.hyper=true
+
+setTimeout(()=>player.hyper=false,5000)
+
+}
+
+function hitWall(x,y,s){
+
+for(let w of walls){
+
+if(x<w.x+w.w && x+s>w.x && y<w.y+w.h && y+s>w.y)
+return true
+
+}
+
+return false
+
+}
+
+const bullets=[]
+const enemies=[]
+const allies=[]
+
+const walls=[
+
+{x:300,y:150,w:200,h:40},
+{x:600,y:100,w:40,h:200},
+{x:500,y:420,w:200,h:40},
+{x:150,y:350,w:150,h:40}
+
+]
+
+let player
+let score=0
+
+function startGame(type){
+
+document.getElementById("menu").style.display="none"
+ui.style.display="block"
+
+player=new Character(120,300,"blue",type)
+
+for(let i=0;i<2;i++)
+allies.push(new Character(100,100+i*80,"blue","fast"))
+
+for(let i=0;i<4;i++)
+enemies.push(new Character(800,100+i*100,"red","fast"))
+
+gameLoop()
+
+}
+
+document.addEventListener("keydown",e=>{
+
+if(!player)return
+
+if(e.code=="Space"){
+let dx=mouse.x-player.x
+let dy=mouse.y-player.y
+shoot(player,dx,dy)
+}
+
+if(e.code=="KeyK")gadget()
+
+if(e.code=="KeyL")hyper()
+
+})
+
+function updateBullets(){
+
+bullets.forEach((b,i)=>{
+
+b.x+=b.vx
+b.y+=b.vy
+
+ctx.fillStyle="yellow"
+ctx.fillRect(b.x,b.y,5,5)
+
+let targets=[player,...allies,...enemies]
+
+targets.forEach(t=>{
+
+if(t.team==b.team || t.respawn>0)return
+
+if(b.x<t.x+t.size && b.x>t.x &&
+b.y<t.y+t.size && b.y>t.y){
+
+t.hp-=b.damage
+bullets.splice(i,1)
+
+if(t.hp<=0){
+
+t.respawn=180
+t.hp=t.maxHp
+
+if(t.team=="red"){
+score++
+scoreEl.textContent=score
+}
+
+}
+
+}
+
+})
+
+})
+
+}
+
+function drawWalls(){
+
+ctx.fillStyle="#64748b"
+
+walls.forEach(w=>{
+ctx.fillRect(w.x,w.y,w.w,w.h)
+})
+
+}
+
+function respawnUpdate(chars){
+
+chars.forEach(c=>{
+
+if(c.respawn>0){
+
+c.respawn--
+
+if(c.respawn==0){
+
+c.x=Math.random()*900+50
+c.y=Math.random()*500+50
+
+}
+
+}
+
+})
+
+}
+
+function gameLoop(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+drawWalls()
+
+player.move()
+player.draw()
+
+allies.forEach(a=>a.draw())
+
+enemies.forEach(e=>{
+e.ai()
+e.draw()
+})
+
+updateBullets()
+
+respawnUpdate(enemies)
+
+requestAnimationFrame(gameLoop)
+
+}
+
+</script>
+
+</body>
+</html>
