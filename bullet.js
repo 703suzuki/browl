@@ -1,6 +1,6 @@
 class Bullet{
 
-constructor(x,y,dx,dy,damage,owner,type="normal"){
+constructor(x,y,dx,dy,damage,owner){
 
 this.x=x
 this.y=y
@@ -8,8 +8,8 @@ this.dx=dx
 this.dy=dy
 this.damage=damage
 this.owner=owner
-this.type=type
 this.r=5
+this.dead=false
 
 }
 
@@ -17,6 +17,10 @@ update(){
 
 this.x+=this.dx
 this.y+=this.dy
+
+if(collideWall(this.x,this.y,this.r)){
+this.dead=true
+}
 
 }
 
