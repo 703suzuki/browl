@@ -7,7 +7,7 @@ const HEIGHT = canvas.height
 
 generateMap()
 
-// キー入力管理
+// キー入力
 const keys = {}
 
 document.addEventListener("keydown", e=>{
@@ -53,7 +53,7 @@ return target
 
 }
 
-// 射撃
+// プレイヤー射撃
 function shoot(){
 
 if(player.reload < 1) return
@@ -82,7 +82,7 @@ player.reload = 0
 
 }
 
-// キー操作
+// 攻撃キー
 document.addEventListener("keydown", e=>{
 
 if(e.code === "Space") shoot()
@@ -95,7 +95,7 @@ if(e.key === "b") hyper(player)
 
 })
 
-// 更新
+// 更新処理
 function update(){
 
 // 移動
@@ -125,14 +125,14 @@ for(let bullet of bullets){
 bullet.update()
 }
 
-// 弾ヒット判定
+// BOT被弾
 for(let bullet of bullets){
 
 for(let bot of bots){
 
 let d = Math.hypot(bullet.x-bot.x, bullet.y-bot.y)
 
-if(d < 20 && bullet.owner !== bot){
+if(d < bot.r && bullet.owner !== bot){
 
 bot.hp -= bullet.damage
 bullet.dead = true
@@ -147,9 +147,34 @@ let p = safeSpawn()
 
 bot.x = p.x
 bot.y = p.y
-bot.hp = 100
+bot.hp = bot.maxHp
 
 }
+
+}
+
+}
+
+}
+
+// プレイヤー被弾（BOTの弾）
+for(let bullet of bullets){
+
+let d = Math.hypot(bullet.x-player.x, bullet.y-player.y)
+
+if(d < player.r && bullet.owner !== player){
+
+player.hp -= bullet.damage
+bullet.dead = true
+player.lastHit = Date.now()
+
+if(player.hp <= 0){
+
+let p = safeSpawn()
+
+player.x = p.x
+player.y = p.y
+player.hp = player.maxHp
 
 }
 
@@ -158,7 +183,7 @@ bot.hp = 100
 }
 
 // 弾削除
-for(let i=bullets.length-1;i>=0;i--){
+for(let i = bullets.length-1; i >= 0; i--){
 if(bullets[i].dead){
 bullets.splice(i,1)
 }
@@ -187,7 +212,7 @@ bullet.draw(ctx)
 
 }
 
-// ゲームループ
+// ループ
 function loop(){
 
 update()
