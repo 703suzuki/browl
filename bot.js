@@ -4,10 +4,23 @@ constructor(x,y){
 
 this.x=x
 this.y=y
+this.r=20
 
 this.hp=100
-
 this.speed=2
+
+}
+
+move(dx,dy){
+
+let nx=this.x+dx
+let ny=this.y+dy
+
+if(!collideWall(nx,this.y,this.r))
+this.x=nx
+
+if(!collideWall(this.x,ny,this.r))
+this.y=ny
 
 }
 
@@ -21,8 +34,7 @@ let d=Math.hypot(dx,dy)
 dx/=d
 dy/=d
 
-this.x+=dx*this.speed
-this.y+=dy*this.speed
+this.move(dx*this.speed,dy*this.speed)
 
 }
 
@@ -31,7 +43,7 @@ draw(ctx){
 ctx.fillStyle="red"
 
 ctx.beginPath()
-ctx.arc(this.x,this.y,20,0,Math.PI*2)
+ctx.arc(this.x,this.y,this.r,0,Math.PI*2)
 ctx.fill()
 
 }
