@@ -8,14 +8,17 @@ this.y = y
 
 this.r = 20
 
+// HP
 this.hp = 100
 this.maxHp = 100
 
 this.speed = 2
 
+// 射撃
 this.reload = 2
 this.maxReload = 2
 
+// ランダム移動
 this.dir = Math.random()*Math.PI*2
 this.changeTimer = 0
 
@@ -27,19 +30,21 @@ move(dx,dy){
 let nx = this.x + dx
 let ny = this.y + dy
 
-if(!collideWall(nx,this.y,this.r))
+if(!collideWall(nx,this.y,this.r)){
 this.x = nx
-else
+}else{
 this.dir += Math.PI/2
+}
 
-if(!collideWall(this.x,ny,this.r))
+if(!collideWall(this.x,ny,this.r)){
 this.y = ny
-else
+}else{
 this.dir += Math.PI/2
+}
 
 }
 
-// 攻撃
+// BOT攻撃
 shoot(player,bullets){
 
 if(this.reload < 1) return
@@ -67,7 +72,7 @@ this.reload = 0
 
 update(player,bullets){
 
-// リロード
+// リロード回復
 if(this.reload < this.maxReload){
 this.reload += 0.02
 }
@@ -84,13 +89,11 @@ dy /= dist
 this.changeTimer--
 
 if(this.changeTimer <= 0){
-
 this.dir = Math.random()*Math.PI*2
 this.changeTimer = 60 + Math.random()*120
-
 }
 
-// プレイヤーが近い
+// プレイヤーが近いと追跡
 if(dist < 300){
 
 this.move(dx*this.speed, dy*this.speed)
@@ -121,18 +124,25 @@ this.shoot(player,bullets)
 
 draw(ctx){
 
+// キャラ
 ctx.fillStyle = "red"
 
 ctx.beginPath()
 ctx.arc(this.x,this.y,this.r,0,Math.PI*2)
 ctx.fill()
 
-// HPバー
+// HPバー背景
 ctx.fillStyle = "black"
 ctx.fillRect(this.x-20,this.y-30,40,5)
 
+// HPバー
 ctx.fillStyle = "lime"
-ctx.fillRect(this.x-20,this.y-30,40*(this.hp/this.maxHp),5)
+ctx.fillRect(
+this.x-20,
+this.y-30,
+40*(this.hp/this.maxHp),
+5
+)
 
 // HP数字
 ctx.fillStyle = "white"
